@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../widgets/social_button.dart';
 import '../theme/app_styles.dart';
 import 'signup_screen.dart';
 import 'home_page.dart';
-import '../data/user_store.dart';
+import '../data/app_store.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,8 +13,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,101 +30,184 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         decoration: AppStyles.backgroundGradient,
         child: Center(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            width: 350,
-            decoration: AppStyles.cardBox,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FlutterLogo(size: 60),
-                  const SizedBox(height: 20),
-                  Text("Welcome Back! Log In with", style: AppStyles.headline),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      SocialButton(icon: Icons.facebook, color: Colors.blue),
-                      SizedBox(width: 10),
-                      SocialButton(icon: Icons.g_mobiledata, color: Colors.red),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Text("or"),
-                  const SizedBox(height: 10),
-
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: "Your Email"),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Email is required";
-                      }
-                      if (!value.contains("@")) {
-                        return "Enter a valid email";
-                      }
-                      return null;
-                    },
-
-                  ),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: "New Password",
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+              width: 380,
+              decoration: AppStyles.cardBox,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo / Icon
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppStyles.primaryBrown.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppStyles.accentGold,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.auto_stories,
+                        size: 48,
+                        color: AppStyles.primaryBrown,
+                      ),
                     ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Password is required";
-                      }
-                      if (value.length < 8) {
-                        return "Password must be at least 8 characters";
-                      }
-                      return null;
-                    },
-                  ),
+                    const SizedBox(height: 16),
+                    Text("LibraryTracker", style: AppStyles.headline),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Your personal reading companion",
+                      style: AppStyles.subText,
+                    ),
+                    const SizedBox(height: 28),
 
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: AppStyles.primaryButton,
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        bool isValid = UserStore.validateUser(
-                          _emailController.text,
-                          _passwordController.text,
-                        );
+                    // Divider with label
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: AppStyles.accentGold.withOpacity(0.5),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text("Sign In", style: AppStyles.subText),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: AppStyles.accentGold.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                        if (isValid) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HomePage()),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Invalid email or password"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
+                    // Username
+                    TextFormField(
+                      controller: _usernameController,
+                      textCapitalization: TextCapitalization.none,
+                      decoration: AppStyles.inputDecoration(
+                        "Username",
+                        Icons.badge_outlined,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return "Username is required";
                         }
-                      }
-                    },
-                    child: const Text("LOG IN"),
-                  ),
+                        if (value.trim().length < 3) {
+                          return "Username must be at least 3 characters";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
 
-                  const SizedBox(height: 10),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                      );
-                    },
-                    child: const Text("Don't have an account? Create Account"),
-                  ),
-                ],
+                    // Password
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration:
+                          AppStyles.inputDecoration(
+                            "Password",
+                            Icons.lock_outline,
+                          ).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: AppStyles.warmGrey,
+                                size: 20,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                          ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Password is required";
+                        }
+                        if (value.length < 8) {
+                          return "Password must be at least 8 characters";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Login Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: AppStyles.primaryButton,
+                        icon: const Icon(Icons.login, size: 18),
+                        label: const Text("SIGN IN"),
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            bool isValid = AuthService.validateCredentials(
+                              _usernameController.text.trim(),
+                              _passwordController.text,
+                            );
+
+                            if (isValid) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const HomePage(),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Invalid username or password"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Sign Up
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SignUpScreen(),
+                          ),
+                        );
+                      },
+                      child: RichText(
+                        text: const TextSpan(
+                          text: "New reader? ",
+                          style: TextStyle(
+                            color: AppStyles.warmGrey,
+                            fontSize: 13,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: "Create an account",
+                              style: TextStyle(
+                                color: AppStyles.primaryBrown,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

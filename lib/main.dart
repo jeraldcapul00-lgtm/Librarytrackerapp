@@ -14,10 +14,15 @@ class LibraryTrackerApp extends StatelessWidget {
       title: 'LibraryTracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        useMaterial3: true,   
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF5C3D2E),
+          brightness: Brightness.light,
+        ),
+        fontFamily: 'Georgia',
+        scaffoldBackgroundColor: const Color(0xFFF5EFE6),
       ),
-      home: const LoginScreen(), // ✅ Starts at Login
+      home: const LoginScreen(),
     );
   }
 }
