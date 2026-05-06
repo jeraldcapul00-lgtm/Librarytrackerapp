@@ -114,8 +114,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               Icons.person_outline,
                             ),
                             validator: (value) {
-                              if (value == null || value.trim().isEmpty)
+                              if (value == null || value.trim().isEmpty) {
                                 return "First name is required";
+                              }
                               return null;
                             },
                           ),
@@ -130,8 +131,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               Icons.person_outline,
                             ),
                             validator: (value) {
-                              if (value == null || value.trim().isEmpty)
+                              if (value == null || value.trim().isEmpty) {
                                 return "Last name is required";
+                              }
                               return null;
                             },
                           ),
@@ -147,10 +149,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         Icons.badge_outlined,
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty)
+                        if (value == null || value.trim().isEmpty) {
                           return "Username is required";
-                        if (value.trim().length < 3)
+                        }
+                        if (value.trim().length < 3) {
                           return "Username must be at least 3 characters";
+                        }
                         return null;
                       },
                     ),
@@ -178,10 +182,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ),
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return "Password is required";
-                        if (value.length < 8)
+                        }
+                        if (value.length < 8) {
                           return "Must be at least 8 characters";
+                        }
                         return null;
                       },
                     ),
@@ -209,15 +215,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ),
                       validator: (value) {
-                        if (value != _passwordController.text)
+                        if (value != _passwordController.text) {
                           return "Passwords do not match";
+                        }
                         return null;
                       },
                     ),
                     const SizedBox(height: 14),
 
                     DropdownButtonFormField<String>(
-                      value: _selectedCourse,
+                      initialValue: _selectedCourse,
                       decoration: AppStyles.inputDecoration(
                         "Course",
                         Icons.school_outlined,
@@ -234,8 +241,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onChanged: (value) =>
                           setState(() => _selectedCourse = value),
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return "Course is required";
+                        }
                         return null;
                       },
                     ),
@@ -249,8 +257,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         Icons.mail_outline,
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return "Email is required";
+                        }
                         if (!value.contains("@")) return "Enter a valid email";
                         return null;
                       },

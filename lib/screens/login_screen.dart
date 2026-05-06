@@ -1,8 +1,12 @@
+// lib/screens/login_screen.dart
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
-import '../theme/app_styles.dart';
+import 'package:librarytrackerapp/theme/app_styles.dart';
+import '../data/user_session.dart';
 import 'signup_screen.dart';
 import 'home_page.dart';
-import '../data/app_store.dart';
+import 'admin_home_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,12 +20,113 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  String get _baseUrl {
+    if (kIsWeb) return 'http://localhost:5000';
+    return 'http://10.0.2.2:5000';
+  }
+
+  // ── Admin credentials ────────────────────────────────────────────────────
+  static const String _adminUsername = 'adminlibrary';
+  static const String _adminPassword = 'admin123';
+
+  Future<void> _login(String username, String password) async {
+    setState(() => _isLoading = true);
+
+    // ✅ Admin shortcut — no API call needed
+    if (username == _adminUsername && password == _adminPassword) {
+      Session.username = 'Admin';
+      Session.studentId = null;
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminHomePage()),
+      );
+      return;
+    }
+
+    // ── Normal student login via API ─────────────────────────────────────
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        validateStatus: (status) => true,
+      ),
+    );
+
+    try {
+      final response = await dio.post(
+        '$_baseUrl/Login/UserLogin',
+        data: {"username": username, "password": password},
+      );
+
+      if (!mounted) return;
+
+      final data = response.data;
+      debugPrint('Login response: $data');
+
+      if (data is Map && data['status'] == 200) {
+        final userData = data['data'];
+        Session.studentId = userData['studentId'];
+        Session.username = username;
+
+        debugPrint('Logged in — studentID: ${Session.studentId}');
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      } else {
+        final message = (data is Map && data['message'] != null)
+            ? data['message'].toString()
+            : 'Invalid username or password';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } on DioException catch (e) {
+      if (!mounted) return;
+
+      String errorMessage = 'Connection error. Please try again.';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMessage = 'Connection timed out. Check your network.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage =
+            'Cannot reach the server.\n'
+            'Make sure the server is running and the URL is correct.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+      );
+
+      debugPrint('DioException: ${e.type} — ${e.message}');
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+      debugPrint('Unexpected error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -41,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo / Icon
+                    // ── Logo ────────────────────────────────────────────────
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -67,7 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // Divider with label
                     Row(
                       children: [
                         Expanded(
@@ -88,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Username
+                    // ── Username ────────────────────────────────────────────
                     TextFormField(
                       controller: _usernameController,
                       textCapitalization: TextCapitalization.none,
@@ -108,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Password
+                    // ── Password ────────────────────────────────────────────
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -142,42 +246,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // Login Button
+                    // ── Login Button ────────────────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: AppStyles.primaryButton,
-                        icon: const Icon(Icons.login, size: 18),
-                        label: const Text("SIGN IN"),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            bool isValid = AuthService.validateCredentials(
-                              _usernameController.text.trim(),
-                              _passwordController.text,
-                            );
-
-                            if (isValid) {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const HomePage(),
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
                                 ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Invalid username or password"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
+                              )
+                            : const Icon(Icons.login, size: 18),
+                        label: Text(_isLoading ? "SIGNING IN..." : "SIGN IN"),
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                if (_formKey.currentState!.validate()) {
+                                  await _login(
+                                    _usernameController.text.trim(),
+                                    _passwordController.text,
+                                  );
+                                }
+                              },
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Sign Up
+                    // ── Sign Up Link ────────────────────────────────────────
                     TextButton(
                       onPressed: () {
                         Navigator.push(

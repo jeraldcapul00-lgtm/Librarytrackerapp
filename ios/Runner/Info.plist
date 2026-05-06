@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Librarytrackerapp</string>
+	<string>LibraryTracker</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -41,9 +41,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+
+	<!-- ── GPS Location Permissions (REQUIRED for map) ── -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>LibraryTracker needs your location to show the route to ACLC Manduae Library.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>LibraryTracker needs your location to show the route to ACLC Manduae Library.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>LibraryTracker needs your location to show the route to ACLC Manduae Library.</string>
+
 </dict>
 </plist>
