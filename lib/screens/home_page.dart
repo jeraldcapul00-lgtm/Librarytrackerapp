@@ -8,7 +8,7 @@ import '../theme/app_styles.dart';
 import 'login_screen.dart';
 import 'add_book.dart';
 import 'my_borrows_screen.dart';
-import 'library_map_screen.dart'; // ← NEW import
+import 'library_map_screen.dart';
 
 // ─── BORROW RECORD MODEL ──────────────────────────────────────────────────────
 
@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage>
   // ─── API ──────────────────────────────────────────────────────────────────
 
   String get _baseUrl =>
-      kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+      kIsWeb ? 'http://localhost:5000' : 'http://192.168.137.1:5000';
 
   Future<void> _fetchBorrowRecords() async {
     if (Session.studentId == null) return;
@@ -145,14 +145,12 @@ class _HomePageState extends State<HomePage>
       final txnData = results[0].data;
       final bookData = results[1].data;
 
-      // Count total books
       if (bookData is List) {
         _totalBooksCount = bookData.length;
       } else if (bookData is Map && bookData['data'] is List) {
         _totalBooksCount = (bookData['data'] as List).length;
       }
 
-      // Build bookID → title map
       final Map<int, String> bookTitles = {};
       final rawBooks = bookData is List
           ? bookData
@@ -167,7 +165,6 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      // Parse transactions
       final List<dynamic> txnList = txnData is List
           ? txnData
           : (txnData is Map && txnData['data'] is List
@@ -266,35 +263,11 @@ class _HomePageState extends State<HomePage>
         ],
       ),
       actions: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            const Text(
-              'STUDENT',
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 9,
-                letterSpacing: 1,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              _displayName,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 10),
         GestureDetector(
           onTap: _showLogoutDialog,
           child: Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: const Color(0xFF52B788),
               shape: BoxShape.circle,
@@ -305,24 +278,20 @@ class _HomePageState extends State<HomePage>
                 _initials,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 4),
-        TextButton.icon(
+        const SizedBox(width: 6),
+        IconButton(
           onPressed: _showLogoutDialog,
-          icon: const Icon(Icons.logout, size: 14, color: Colors.white60),
-          label: const Text(
-            'Logout',
-            style: TextStyle(color: Colors.white60, fontSize: 11),
-          ),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-          ),
+          icon: const Icon(Icons.logout, size: 18, color: Colors.white60),
+          tooltip: 'Logout',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
         const SizedBox(width: 4),
       ],
@@ -377,7 +346,7 @@ class _HomePageState extends State<HomePage>
       case 2:
         return const MyBorrowsScreen();
       case 3:
-        return const LibraryMapScreen(); // ← REAL MAP
+        return const LibraryMapScreen();
       case 4:
         return _buildProfile();
       default:
@@ -523,7 +492,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ── HERO ──────────────────────────────────────────────────────────────────
+  // ── HERO (FIXED: Column layout prevents horizontal overflow on small screens)
 
   Widget _buildHero() {
     return Container(
@@ -536,53 +505,32 @@ class _HomePageState extends State<HomePage>
         ),
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'STUDENT PORTAL',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Hello, $_displayName! 👋',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Track your books, borrows, and reading activity.',
-                  style: TextStyle(color: Colors.white60, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          // Row 1: badge + date pill — both intrinsic width, no overflow risk
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'STUDENT PORTAL',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -615,7 +563,26 @@ class _HomePageState extends State<HomePage>
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Row 2: greeting (Expanded) + time — Expanded prevents overflow
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Text(
+                  'Hello, $_displayName! 👋',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
                 _formattedTime(),
                 style: const TextStyle(
@@ -626,6 +593,11 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Track your books, borrows, and reading activity.',
+            style: TextStyle(color: Colors.white60, fontSize: 12),
           ),
         ],
       ),
@@ -821,10 +793,12 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildActivityBarCard(List<Book> books) {
     final Map<String, int> monthCounts = {};
+
     for (final b in books) {
       const key = 'Apr';
       monthCounts[key] = (monthCounts[key] ?? 0) + 1;
     }
+
     final maxVal = monthCounts.isEmpty
         ? 1
         : monthCounts.values.reduce((a, b) => a > b ? a : b);
@@ -835,24 +809,36 @@ class _HomePageState extends State<HomePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // MODIFIED CARD HEADER
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _cardHeader('📈', 'Reading Activity'),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B3A2E).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${_borrowRecords.length} txns',
-                  style: const TextStyle(fontSize: 9, color: Color(0xFF6B7280)),
-                ),
+              Row(
+                children: const [
+                  Text(
+                    '📈',
+                    style: TextStyle(
+                      fontSize: 20, // ICON SIZE
+                    ),
+                  ),
+
+                  SizedBox(width: 8),
+
+                  Text(
+                    'Reading Activity',
+                    style: TextStyle(
+                      fontSize: 12.5, // HEADER TEXT SIZE
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
           SizedBox(
             height: 80,
             child: monthCounts.isEmpty
@@ -867,6 +853,7 @@ class _HomePageState extends State<HomePage>
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: monthCounts.entries.map((e) {
                       final pct = e.value / maxVal;
+
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -878,7 +865,9 @@ class _HomePageState extends State<HomePage>
                               color: Color(0xFF111827),
                             ),
                           ),
+
                           const SizedBox(height: 3),
+
                           Container(
                             width: 28,
                             height: 55 * pct,
@@ -887,7 +876,9 @@ class _HomePageState extends State<HomePage>
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
+
                           const SizedBox(height: 4),
+
                           Text(
                             e.key,
                             style: const TextStyle(

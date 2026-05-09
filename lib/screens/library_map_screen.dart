@@ -7,9 +7,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
-// ─── ACLC MANDUAE LIBRARY COORDINATES ────────────────────────────────────────
+// ─── ACLC MANDAUE LIBRARY COORDINATES ────────────────────────────────────────
 const LatLng _libraryPos = LatLng(10.3336, 123.9418);
-const String _libraryName = 'ACLC MANDUAE LIBRARY';
+const String _libraryName = 'ACLC MANDAUE';
 
 class LibraryMapScreen extends StatefulWidget {
   const LibraryMapScreen({super.key});

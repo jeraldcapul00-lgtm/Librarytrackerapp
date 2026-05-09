@@ -5,6 +5,9 @@ import '../data/user_session.dart';
 import '../services/api_service.dart';
 import '../theme/app_styles.dart';
 import 'borrow_receipt_screen.dart';
+import 'home_page.dart';
+import 'my_borrows_screen.dart';
+import 'library_map_screen.dart';
 
 class AddBookScreen extends StatefulWidget {
   const AddBookScreen({super.key});
@@ -14,15 +17,17 @@ class AddBookScreen extends StatefulWidget {
 }
 
 class _AddBookScreenState extends State<AddBookScreen> {
+  // ── Bottom nav index (1 = Add Book / this screen) ─────────────────────────
+  int _selectedIndex = 1;
+
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Books loaded from API
   List<Map<String, dynamic>> _books = [];
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Maps genre keywords to emoji + color for display
+  // ─── Genre emoji + color ─────────────────────────────────────────────────
   static const _genreEmoji = {
     'fiction': ('📖', Color(0xFF7F1D1D)),
     'science': ('🔬', Color(0xFF1B3A5C)),
@@ -53,7 +58,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
     super.dispose();
   }
 
-  // ── Load books from API ────────────────────────────────────────────────────
+  // ─── Load books from API ──────────────────────────────────────────────────
 
   Future<void> _loadBooks() async {
     setState(() {
@@ -73,7 +78,6 @@ class _AddBookScreenState extends State<AddBookScreen> {
       return;
     }
 
-    // Map API response to display format
     setState(() {
       _isLoading = false;
       _books = apiBooks.map((b) {
@@ -94,7 +98,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
     });
   }
 
-  // ── Filter ────────────────────────────────────────────────────────────────
+  // ─── Filter ───────────────────────────────────────────────────────────────
 
   List<Map<String, dynamic>> get _filteredBooks {
     if (_searchQuery.isEmpty) return _books;
@@ -106,7 +110,38 @@ class _AddBookScreenState extends State<AddBookScreen> {
     }).toList();
   }
 
-  // ── Borrow confirmation ────────────────────────────────────────────────────
+  // ─── Bottom nav handler ───────────────────────────────────────────────────
+
+  void _onNavTap(int index) {
+    if (index == _selectedIndex) return;
+
+    if (index == 0) {
+      // Dashboard — pop back to HomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } else if (index == 1) {
+      // Already here
+    } else if (index == 2) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const _NavShell(initialIndex: 2)),
+      );
+    } else if (index == 3) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const _NavShell(initialIndex: 3)),
+      );
+    } else if (index == 4) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const _NavShell(initialIndex: 4)),
+      );
+    }
+  }
+
+  // ─── Borrow confirmation ──────────────────────────────────────────────────
 
   Future<void> _confirmBorrow(Map<String, dynamic> book) async {
     if (!(book['available'] as bool)) {
@@ -235,14 +270,12 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
 
     if (confirmed == true && mounted) {
-      // ── Show loading ───────────────────────────────────────────────
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => const Center(child: CircularProgressIndicator()),
       );
 
-      // ── Call API ───────────────────────────────────────────────────
       final success = await ApiService.borrowBook(
         studentId: Session.studentId ?? 0,
         bookId: book['id'] as int,
@@ -262,7 +295,6 @@ class _AddBookScreenState extends State<AddBookScreen> {
         return;
       }
 
-      // ── Save to local BookStore so dashboard updates ───────────────
       BookStore.addBook(
         Book(
           id: book['id'].toString(),
@@ -275,7 +307,6 @@ class _AddBookScreenState extends State<AddBookScreen> {
         ),
       );
 
-      // Update local quantity so card flips to "Borrowed" if stock runs out
       setState(() {
         final qty = (book['quantity'] as int) - 1;
         book['quantity'] = qty;
@@ -289,7 +320,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────────────────────────────
 
   Widget _pill(String text, Color color) {
     return Container(
@@ -310,7 +341,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -318,9 +349,50 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
     return Scaffold(
       backgroundColor: AppStyles.creamBackground,
+
+      // ── BOTTOM NAVIGATION BAR (matches home_page.dart exactly) ────────────
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onNavTap,
+        selectedItemColor: const Color(0xFF1B3A2E),
+        unselectedItemColor: AppStyles.warmGrey,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
+        elevation: 12,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle_outline),
+            activeIcon: Icon(Icons.add_circle),
+            label: 'Add Book',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_outlined),
+            activeIcon: Icon(Icons.inventory_2),
+            label: 'My Borrows',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map_outlined),
+            activeIcon: Icon(Icons.map),
+            label: 'Library Map',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+
       body: Column(
         children: [
-          // ── HEADER ──────────────────────────────────────────────────
+          // ── HEADER ────────────────────────────────────────────────────────
           Container(
             width: double.infinity,
             decoration: const BoxDecoration(
@@ -344,25 +416,9 @@ class _AddBookScreenState extends State<AddBookScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Top row: logo + nav pill
                     Row(
                       children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.white24),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Container(
                           width: 30,
                           height: 30,
@@ -416,6 +472,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
+
+                    // Title
                     const Text(
                       "📖 Browse Books",
                       style: TextStyle(
@@ -431,6 +489,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
                       style: TextStyle(color: Colors.white60, fontSize: 12),
                     ),
                     const SizedBox(height: 14),
+
+                    // Search bar
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -481,7 +541,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Book count or loading indicator
+
+                    // Count
                     _isLoading
                         ? const Text(
                             "Loading books...",
@@ -518,7 +579,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
             ),
           ),
 
-          // ── BOOK GRID ────────────────────────────────────────────────
+          // ── BOOK GRID ─────────────────────────────────────────────────────
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -592,6 +653,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
+  // ─── Nav pill ─────────────────────────────────────────────────────────────
+
   Widget _navPill(String label, bool active) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
@@ -617,6 +680,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
+  // ─── Book card ────────────────────────────────────────────────────────────
+
   Widget _bookCard(Map<String, dynamic> book) {
     final isAvailable = book['available'] as bool;
     final isFavorite = book['isFavorite'] as bool;
@@ -640,6 +705,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Cover
             Expanded(
               flex: 5,
               child: Stack(
@@ -684,6 +750,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
                       ],
                     ),
                   ),
+                  // Availability badge
                   Positioned(
                     top: 10,
                     left: 10,
@@ -715,6 +782,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
                       ),
                     ),
                   ),
+                  // Favourite
                   Positioned(
                     top: 8,
                     right: 8,
@@ -743,6 +811,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
                 ],
               ),
             ),
+            // Info
             Expanded(
               flex: 3,
               child: Padding(
@@ -804,6 +873,139 @@ class _AddBookScreenState extends State<AddBookScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── NAV SHELL ────────────────────────────────────────────────────────────────
+// Lightweight wrapper so tapping Dashboard/My Borrows/Map/Profile from
+// AddBookScreen lands on the right tab inside HomePage without duplicating
+// all that state. We simply replace with HomePage and set the index.
+
+class _NavShell extends StatefulWidget {
+  final int initialIndex;
+  const _NavShell({required this.initialIndex});
+
+  @override
+  State<_NavShell> createState() => _NavShellState();
+}
+
+class _NavShellState extends State<_NavShell> {
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Build the body for the selected tab
+    Widget body;
+    switch (_index) {
+      case 2:
+        body = const MyBorrowsScreen();
+        break;
+      case 3:
+        body = const LibraryMapScreen();
+        break;
+      default:
+        // 4 = Profile — just go to HomePage which handles profile
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
+        });
+        body = const SizedBox();
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1B3A2E),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.auto_stories,
+                color: Color(0xFF52B788),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'LibraryTracker',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: body,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _index,
+        onTap: (i) {
+          if (i == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomePage()),
+            );
+          } else if (i == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const AddBookScreen()),
+            );
+          } else {
+            setState(() => _index = i);
+          }
+        },
+        selectedItemColor: const Color(0xFF1B3A2E),
+        unselectedItemColor: const Color(0xFF9CA3AF),
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
+        elevation: 12,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle_outline),
+            activeIcon: Icon(Icons.add_circle),
+            label: 'Add Book',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_outlined),
+            activeIcon: Icon(Icons.inventory_2),
+            label: 'My Borrows',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map_outlined),
+            activeIcon: Icon(Icons.map),
+            label: 'Library Map',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

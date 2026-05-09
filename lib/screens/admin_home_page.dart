@@ -108,9 +108,8 @@ class _AdminHomePageState extends State<AdminHomePage>
   // ─── API ──────────────────────────────────────────────────────────────────
 
   String get _baseUrl =>
-      kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+      kIsWeb ? 'http://localhost:5000' : 'http://192.168.137.1:5000';
 
-  /// Safely unwraps { status, data: [...] } OR raw [...] from Dio response
   List<dynamic> _unwrap(dynamic data) {
     if (data == null) return [];
     if (data is List) return data;
@@ -136,15 +135,13 @@ class _AdminHomePageState extends State<AdminHomePage>
       );
 
       final results = await Future.wait([
-        dio.get('$_baseUrl/api/Transaction'), // results[0]
-        dio.get('$_baseUrl/api/Book/all'), // results[1]
-        dio.get('$_baseUrl/Login/GetAllUsers'), // results[2]
+        dio.get('$_baseUrl/api/Transaction'),
+        dio.get('$_baseUrl/api/Book/all'),
+        dio.get('$_baseUrl/Login/GetAllUsers'),
       ]);
 
       if (!mounted) return;
 
-      // ── 1. Parse books ──────────────────────────────────────────────────
-      // API: { status:200, data: [ { bookID, title, author, genre, quantity } ] }
       final Map<int, String> bookTitles = {};
       final List<AdminBook> books = [];
 
@@ -165,10 +162,7 @@ class _AdminHomePageState extends State<AdminHomePage>
         }
       }
 
-      // ── 2. Parse transactions ───────────────────────────────────────────
-      // API: { status:200, data: [ { transactionID, studentID, bookID, ... } ] }
       final List<AdminTransaction> txns = [];
-
       for (final t in _unwrap(results[0].data)) {
         if (t is Map) {
           final sid = (t['studentID'] ?? 0) as int;
@@ -177,7 +171,7 @@ class _AdminHomePageState extends State<AdminHomePage>
             AdminTransaction(
               transactionId: (t['transactionID'] ?? 0) as int,
               studentId: sid,
-              studentName: 'ID $sid', // replaced after user parse
+              studentName: 'ID $sid',
               bookId: bid,
               bookTitle: bookTitles[bid] ?? 'Book #$bid',
               borrowDate: _fmt(t['borrowDate']),
@@ -188,8 +182,6 @@ class _AdminHomePageState extends State<AdminHomePage>
         }
       }
 
-      // ── 3. Parse users ──────────────────────────────────────────────────
-      // API: { status:200, data: [ { studentId, firstName, lastName, username, email, course } ] }
       final Map<int, String> userNames = {};
       final List<AdminUser> users = [];
 
@@ -205,7 +197,6 @@ class _AdminHomePageState extends State<AdminHomePage>
           userNames[id] = displayName;
 
           final userTxns = txns.where((t) => t.studentId == id).toList();
-
           users.add(
             AdminUser(
               studentId: id,
@@ -220,7 +211,6 @@ class _AdminHomePageState extends State<AdminHomePage>
         }
       }
 
-      // ── 4. Replace transaction student names with real names ─────────────
       final namedTxns = txns
           .map(
             (t) => AdminTransaction(
@@ -384,27 +374,32 @@ class _AdminHomePageState extends State<AdminHomePage>
   }
 
   // ─── APP BAR ──────────────────────────────────────────────────────────────
+  // FIX: Use toolbarHeight + shrink font sizes so ADMINISTRATOR/Admin
+  // text column fits without overflowing on narrow phones.
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color(0xFF0F2318),
       foregroundColor: Colors.white,
       elevation: 0,
+      // Slightly taller bar gives the two-line title more breathing room
+      toolbarHeight: 52,
       title: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(7),
             ),
             child: const Icon(
               Icons.auto_stories,
               color: Color(0xFF52B788),
-              size: 20,
+              size: 16,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -414,21 +409,21 @@ class _AdminHomePageState extends State<AdminHomePage>
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  letterSpacing: 0.3,
+                  fontSize: 14,
+                  letterSpacing: 0.2,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
                   color: const Color(0xFF52B788).withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(3),
                 ),
                 child: const Text(
                   'ADMIN',
                   style: TextStyle(
                     color: Color(0xFF52B788),
-                    fontSize: 8,
+                    fontSize: 7,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
                   ),
@@ -438,7 +433,10 @@ class _AdminHomePageState extends State<AdminHomePage>
           ),
         ],
       ),
+      // FIX: Keep ADMINISTRATOR label + Admin name + avatar + logout icon.
+      // Reduced font sizes and padding so everything fits on narrow screens.
       actions: [
+        // ADMINISTRATOR / Admin name column — kept, just made smaller
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -447,8 +445,8 @@ class _AdminHomePageState extends State<AdminHomePage>
               'ADMINISTRATOR',
               style: TextStyle(
                 color: Colors.white38,
-                fontSize: 8,
-                letterSpacing: 1,
+                fontSize: 7, // reduced from 9 → 7
+                letterSpacing: 0.8,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -456,18 +454,19 @@ class _AdminHomePageState extends State<AdminHomePage>
               _adminName,
               style: const TextStyle(
                 color: Colors.white70,
-                fontSize: 12,
+                fontSize: 10, // reduced from 12 → 10
                 fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 6),
+        // Avatar circle
         GestureDetector(
           onTap: _showLogoutDialog,
           child: Container(
-            width: 36,
-            height: 36,
+            width: 32, // reduced from 34 → 32
+            height: 32,
             decoration: BoxDecoration(
               color: const Color(0xFF52B788),
               shape: BoxShape.circle,
@@ -478,26 +477,22 @@ class _AdminHomePageState extends State<AdminHomePage>
                 _adminInitials,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 13,
+                  fontSize: 11, // reduced from 12 → 11
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 4),
-        TextButton.icon(
+        // Logout icon
+        IconButton(
           onPressed: _showLogoutDialog,
-          icon: const Icon(Icons.logout, size: 14, color: Colors.white60),
-          label: const Text(
-            'Logout',
-            style: TextStyle(color: Colors.white60, fontSize: 11),
-          ),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-          ),
+          icon: const Icon(Icons.logout, size: 16, color: Colors.white60),
+          tooltip: 'Logout',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 2),
       ],
     );
   }
@@ -600,7 +595,7 @@ class _AdminHomePageState extends State<AdminHomePage>
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Hero
+          // HERO — fixed with Column layout to prevent side-by-side overflow
           Container(
             width: double.infinity,
             decoration: const BoxDecoration(
@@ -611,52 +606,31 @@ class _AdminHomePageState extends State<AdminHomePage>
               ),
             ),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'ADMIN CONTROL PANEL',
-                          style: TextStyle(
-                            color: Colors.white60,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Library Overview',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Manage books, users, and borrow transactions.',
-                        style: TextStyle(color: Colors.white60, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'ADMIN CONTROL PANEL',
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -689,7 +663,23 @@ class _AdminHomePageState extends State<AdminHomePage>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Library Overview',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Text(
                       _formattedTime(),
                       style: const TextStyle(
@@ -700,6 +690,11 @@ class _AdminHomePageState extends State<AdminHomePage>
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Manage books, users, and borrow transactions.',
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],
             ),
@@ -884,7 +879,7 @@ class _AdminHomePageState extends State<AdminHomePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cardHeader(Icons.bar_chart, 'Borrow Status Overview'),
+          _cardHeader(Icons.bar_chart, 'Borrow Status'),
           const SizedBox(height: 12),
           Center(
             child: SizedBox(
@@ -919,7 +914,7 @@ class _AdminHomePageState extends State<AdminHomePage>
             ),
           ),
           const SizedBox(height: 10),
-          _pieLegend(const Color(0xFF52B788), 'Active Borrows', _activeBorrows),
+          _pieLegend(const Color(0xFF52B788), 'Active', _activeBorrows),
           const SizedBox(height: 4),
           _pieLegend(const Color(0xFFEF4444), 'Overdue', _overdueBorrows),
           const SizedBox(height: 4),
@@ -1005,11 +1000,7 @@ class _AdminHomePageState extends State<AdminHomePage>
           const SizedBox(height: 10),
           _pieLegend(const Color(0xFF52B788), 'Available', available),
           const SizedBox(height: 4),
-          _pieLegend(
-            const Color(0xFFD97706),
-            'Currently Borrowed',
-            _activeBorrows,
-          ),
+          _pieLegend(const Color(0xFFD97706), 'Borrowed', _activeBorrows),
           const SizedBox(height: 4),
           _pieLegend(const Color(0xFFEF4444), 'Out of Stock', outOfStock),
         ],
@@ -1116,16 +1107,19 @@ class _AdminHomePageState extends State<AdminHomePage>
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Row(
-              children: [
-                _filterTab('All', 'all'),
-                const SizedBox(width: 6),
-                _filterTab('Borrowed', 'borrowed'),
-                const SizedBox(width: 6),
-                _filterTab('Overdue', 'overdue'),
-                const SizedBox(width: 6),
-                _filterTab('Returned', 'returned'),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _filterTab('All', 'all'),
+                  const SizedBox(width: 6),
+                  _filterTab('Borrowed', 'borrowed'),
+                  const SizedBox(width: 6),
+                  _filterTab('Overdue', 'overdue'),
+                  const SizedBox(width: 6),
+                  _filterTab('Returned', 'returned'),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -1247,6 +1241,8 @@ class _AdminHomePageState extends State<AdminHomePage>
     );
   }
 
+  // Transaction row — wrapped in horizontal SingleChildScrollView so
+  // all 6 columns are always visible without Flutter overflow errors.
   Widget _txnRow(AdminTransaction t) {
     Color statusColor;
     Color statusBg;
@@ -1286,179 +1282,115 @@ class _AdminHomePageState extends State<AdminHomePage>
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: Colors.grey.shade100)),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFC8E6C9),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: const TextStyle(
-                            color: Color(0xFF1A6E2E),
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t.studentName,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF111827),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            'ID: ${t.studentId}',
-                            style: const TextStyle(
-                              fontSize: 9,
-                              color: Color(0xFFB0B8C4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'TXN-${t.transactionId}',
-                    style: const TextStyle(
-                      color: Color(0xFF1D4ED8),
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                flex: 2,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        t.bookTitle,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF374151),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: canReturn
-                        ? const Color(0xFFFFF7ED)
-                        : const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: canReturn
-                          ? const Color(0xFFFED7AA)
-                          : const Color(0xFFBBF7D0),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Text(
-                    t.dueDate,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: canReturn
-                          ? const Color(0xFFC2410C)
-                          : const Color(0xFF166534),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          // Fixed width wide enough for all 6 columns on any screen
+          width: 520,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                // STUDENT
+                SizedBox(
+                  width: 100,
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 5,
-                        height: 5,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
-                          color: statusColor,
+                          color: const Color(0xFFE8F5E9),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFC8E6C9),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            initials,
+                            style: const TextStyle(
+                              color: Color(0xFF1A6E2E),
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 3),
-                      Flexible(
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.studentName,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF111827),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'ID: ${t.studentId}',
+                              style: const TextStyle(
+                                fontSize: 8,
+                                color: Color(0xFFB0B8C4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // TXN ID
+                SizedBox(
+                  width: 68,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'TXN-${t.transactionId}',
+                      style: const TextStyle(
+                        color: Color(0xFF1D4ED8),
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // BOOK
+                SizedBox(
+                  width: 80,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
                         child: Text(
-                          statusLabel,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
+                          t.bookTitle,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF374151),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1466,62 +1398,138 @@ class _AdminHomePageState extends State<AdminHomePage>
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                flex: 2,
-                child: canReturn
-                    ? GestureDetector(
-                        onTap: () => _confirmReturn(t),
-                        child: Container(
+                const SizedBox(width: 6),
+                // DUE DATE
+                SizedBox(
+                  width: 80,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: canReturn
+                          ? const Color(0xFFFFF7ED)
+                          : const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: canReturn
+                            ? const Color(0xFFFED7AA)
+                            : const Color(0xFFBBF7D0),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      t.dueDate,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: canReturn
+                            ? const Color(0xFFC2410C)
+                            : const Color(0xFF166534),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // STATUS
+                SizedBox(
+                  width: 68,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            statusLabel,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // ACTION
+                SizedBox(
+                  width: 60,
+                  child: canReturn
+                      ? GestureDetector(
+                          onTap: () => _confirmReturn(t),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F2318),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.undo, size: 10, color: Colors.white),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Return',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F2318),
+                            color: const Color(0xFFF3F4F6),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.undo, size: 10, color: Colors.white),
-                              SizedBox(width: 3),
-                              Text(
-                                'Return',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                          child: const Center(
+                            child: Text(
+                              'Done',
+                              style: TextStyle(
+                                color: Color(0xFF9CA3AF),
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Done',
-                            style: TextStyle(
-                              color: Color(0xFF9CA3AF),
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                      ),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1692,7 +1700,6 @@ class _AdminHomePageState extends State<AdminHomePage>
     final initials = u.name.trim().isNotEmpty
         ? u.name.trim().split(' ').map((p) => p[0]).take(2).join().toUpperCase()
         : u.username.substring(0, 1).toUpperCase();
-
     final hasOverdue = u.overdue > 0;
 
     return Container(
@@ -2091,12 +2098,15 @@ class _AdminHomePageState extends State<AdminHomePage>
         ),
       ),
       const SizedBox(width: 7),
-      Text(
-        title,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF111827),
+      Flexible(
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF111827),
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     ],

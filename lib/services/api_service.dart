@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 class ApiService {
   static String get baseUrl {
     if (kIsWeb) return 'http://localhost:5000';
-    return 'http://10.0.2.2:5000';
+    return 'http://192.168.137.1:5000';
   }
 
   static Dio get _dio => Dio(

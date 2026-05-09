@@ -14,7 +14,7 @@ class LibraryTrackerApp extends StatelessWidget {
       title: 'LibraryTracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        useMaterial3: true,   
+        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF5C3D2E),
           brightness: Brightness.light,
